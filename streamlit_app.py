@@ -12,8 +12,8 @@ import matplotlib.pyplot as plt
 st.set_page_config(page_title="KONTOL", page_icon="🚬")
 
 # Title and description
-st.title("🚬 Cigarette Smoking Detector")
-st.subheader("📘 Capstone Project Group 21")
+st.title("Illegal Parking")
+st.subheader("📘 Capstone Project Group 24")
 st.write(
     """
     This app connects to a Google Spreadsheet and displays real-time data to help monitor smoking activity.
@@ -36,10 +36,10 @@ def get_current_time():
 @st.cache_data(ttl=5)
 def load_data():
     # Create a connection to Google Sheets
-    url = "https://docs.google.com/spreadsheets/d/1pHYvUyvvXwMTqMBIbM3-D7xysYNDGBJ7EPE0PvdohVc/edit?usp=sharing"
+    url = "https://docs.google.com/spreadsheets/d/1bcept49fnUiGc3s5ou_68MLuwhhzhNUNvNMANesQ1Zk/edit?usp=sharing"
     conn = st.connection("gsheets", type=GSheetsConnection)
     df = conn.read(spreadsheet=url, header=1)
-    df.columns = ["Date", "Time", "Detection", "Image Data"]
+    df.columns = ["Date", "Time", "Detection"]
     df = df.dropna(axis=1, how='all')
     return df
 
@@ -51,7 +51,7 @@ if not df.empty:
     last_row = df.iloc[-1]
     last_time = last_row.get("Time")
     last_detection = last_row.get("Detection")
-    last_imdata = last_row.get("Image Data")
+#    last_imdata = last_row.get("Image Data")
 
     # Live Detection Section
     st.subheader("🎥 Live Detection", divider="gray")
