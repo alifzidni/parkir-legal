@@ -1,6 +1,7 @@
 streamlit
 pandas
 st-gsheets-connection
-pillow
+PIL
 matplotlib
-oauth2client
+os
+altair
