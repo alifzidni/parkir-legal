@@ -1,112 +1,6 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
-from streamlit_gsheets import GSheetsConnection
-import matplotlib.pyplot as plt
-import seaborn as sns
-from streamlit_autorefresh import st_autorefresh
-from PIL import Image
-import requests
-from io import BytesIO
-
-# Set up the Streamlit page configuration
-st.set_page_config(page_title="Illegal Parking Monitoring", page_icon="🚬", layout="wide")
-
-# Title and description
-st.title("Illegal Parking Monitoring")
-st.subheader("📘 Capstone Project Group 26")
-st.write(
-    """
-    A real-time dashboard connecting to a Google Spreadsheet to monitor illegal parking activity. 
-    View live detections, analyze trends, and explore historical data.
-    """
-)
-
-# Real-time clock
-st.subheader("⏰ Current Time (UTC+7)")
-clock_placeholder = st.empty()
-
-# Define timezone offset for GMT+7
-gmt_plus_7 = timedelta(hours=7)
-
-def get_current_time():
-    return (datetime.utcnow() + gmt_plus_7).strftime("%H:%M:%S")
-
-# Auto-refresh every 5 seconds
-st_autorefresh(interval=5000, key="auto_refresh")
-
-current_time = get_current_time()
-clock_placeholder.subheader(f"Current Time: {current_time}")
-
-# Function to load data without caching
-def load_data():
-    try:
-        url = "https://docs.google.com/spreadsheets/d/1icVXJlg0MfkAwGMFN5mdiaDHP9IXvAUWXlJtluLJ4_o/edit?usp=sharing"
-        conn = st.connection("gsheets", type=GSheetsConnection)
-        df = conn.read(spreadsheet=url, header=0)
-
-        # Validate columns
-        if len(df.columns) == 4:
-            df.columns = ["Date", "Time", "Detection", "Image"]
-        else:
-            st.error(f"Dataframe has {len(df.columns)} columns, but 4 columns are expected.")
-            st.stop()
-
-        return df
-
-    except Exception as e:
-        st.error(f"Error loading data: {e}")
-        return pd.DataFrame()
-
-# Load data
-df = load_data()
-
-# Convert Google Drive links to direct links
-def convert_gdrive_link(url):
-    if "drive.google.com" in url:
-        file_id = url.split("/d/")[1].split("/")[0]
-        return f"https://drive.google.com/uc?id={file_id}"
-    return url
-
-if not df.empty:
-    df["Image"] = df["Image"].apply(convert_gdrive_link)
-
-    # Display the last row's detection info
-    last_row = df.iloc[-1]
-    last_time = last_row["Time"]
-    last_detection = last_row["Detection"]
-    last_image_url = last_row["Image"]
-
-    st.subheader("🎥 Live Detection")
-    st.markdown(
-        f"""
-        **Information**
-        - **Time Captured:** {last_time}
-        - **Detection Status:** {"**:red[DETECTED]**" if last_detection == 1 else "**:green[NOT DETECTED]**"}
-        """
-    )
-
-    # Display the image
-    st.subheader("🖼️ Latest Detection Image")
-    try:
-        response = requests.get(last_image_url)
-        if response.status_code == 200:
-            image = Image.open(BytesIO(response.content))
-            st.image(image, caption="Latest Detection Image", use_container_width=True)
-        else:
-            st.error(f"Failed to load image. HTTP Status Code: {response.status_code}")
-    except Exception as e:
-        st.error(f"Error loading image: {e}")
-
-    # Display the historical data table
-    st.subheader("📋 Historical Data Table")
-    st.dataframe(df[["Date", "Time", "Detection", "Image"]])
-
-else:
-    st.warning("No data available. Please check the Google Spreadsheet link or data format.")
-import streamlit as st
-import pandas as pd
-from datetime import datetime, timedelta
 import time
 from streamlit_gsheets import GSheetsConnection
 import matplotlib.pyplot as plt
@@ -234,6 +128,38 @@ if not df.empty:
         ax1.axis('equal')
         st.pyplot(fig1)
 
+    # Cumulative Detection Rate Graph
+    st.subheader("📈 Cumulative Detection Rate Over Time")
+    fig2, ax2 = plt.subplots(figsize=(10, 5))
+    df["Time"] = pd.to_datetime(df["Time"], format="%H:%M:%S", errors="coerce")
+    detection_cumsum = df["Detection"].cumsum() / (df.index + 1) * 100
+    ax2.plot(df["Time"], detection_cumsum, label="Cumulative Detection Rate", color="blue")
+    ax2.set_title("Cumulative Detection Rate Over Time")
+    ax2.set_xlabel("Time")
+    ax2.set_ylabel("Detection Rate (%)")
+    ax2.legend()
+    ax2.grid(True)
+    st.pyplot(fig2)
+
+    # Heatmap Section
+    st.subheader("🔥 Heatmap: Waktu vs Jumlah Pelanggaran")
+    df["Hour"] = df["Time"].dt.hour
+    hourly_counts = df.groupby("Hour")["Detection"].sum().reset_index()
+    heatmap_data = pd.DataFrame({
+        "Hour": range(24),
+        "Detections": [
+            hourly_counts.loc[hourly_counts["Hour"] == h, "Detection"].sum()
+            if h in hourly_counts["Hour"].values else 0 for h in range(24)
+        ]
+    }).set_index("Hour")
+
+    fig3, ax3 = plt.subplots(figsize=(10, 5))
+    sns.heatmap(heatmap_data.T, annot=True, fmt=".0f", cmap="YlGnBu", cbar_kws={"label": "Detections"}, ax=ax3)
+    ax3.set_title("Heatmap: Waktu vs Jumlah Pelanggaran")
+    ax3.set_xlabel("Jam (24-Hour Format)")
+    ax3.set_ylabel("Detections")
+    st.pyplot(fig3)
+
     # Display Historical Data Table
     st.subheader("📋 Historical Data Table")
     st.dataframe(df[["Date", "Time", "Detection", "Image_URL"]])
@@ -246,6 +172,6 @@ while True:
     current_time = get_current_time()
     clock_placeholder.subheader(f"{current_time}")
     time.sleep(1)
-    if time.time() - start_time >= 5:
+    if time.time() - start_time >= 10:
         st.cache_data.clear()
         st.rerun()
