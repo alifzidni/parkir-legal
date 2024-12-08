@@ -38,7 +38,7 @@ st_autorefresh(interval=5000, key="auto_refresh")
 current_time = get_current_time()
 clock_placeholder.subheader(f"Current Time: {current_time}")
 
-@st.cache_data(ttl=5)
+# Function to load data without caching
 def load_data():
     try:
         url = "https://docs.google.com/spreadsheets/d/1icVXJlg0MfkAwGMFN5mdiaDHP9IXvAUWXlJtluLJ4_o/edit?usp=sharing"
@@ -68,10 +68,10 @@ def convert_gdrive_link(url):
         return f"https://drive.google.com/uc?id={file_id}"
     return url
 
-df["Image"] = df["Image"].apply(convert_gdrive_link)
-
-# Display the last row's detection info
 if not df.empty:
+    df["Image"] = df["Image"].apply(convert_gdrive_link)
+
+    # Display the last row's detection info
     last_row = df.iloc[-1]
     last_time = last_row["Time"]
     last_detection = last_row["Detection"]
@@ -89,7 +89,12 @@ if not df.empty:
     # Display the image
     st.subheader("🖼️ Latest Detection Image")
     try:
-        st.image(last_image_url, caption="Latest Detection Image", use_container_width=True)
+        response = requests.get(last_image_url)
+        if response.status_code == 200:
+            image = Image.open(BytesIO(response.content))
+            st.image(image, caption="Latest Detection Image", use_container_width=True)
+        else:
+            st.error(f"Failed to load image. HTTP Status Code: {response.status_code}")
     except Exception as e:
         st.error(f"Error loading image: {e}")
 
