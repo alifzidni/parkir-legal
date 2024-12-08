@@ -3,5 +3,3 @@ pandas
 st-gsheets-connection
 PIL
 matplotlib
-os
-altair
