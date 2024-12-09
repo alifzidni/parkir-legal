@@ -148,7 +148,7 @@ if not df.empty:
     heatmap_data = pd.DataFrame({
         "Hour": range(24),
         "Detections": [
-            hourly_counts.loc[hourly_counts["Hour"] == h, "Key Count"].sum()
+            hourly_counts.loc[hourly_counts["Hour"] == h, "Detection"].sum()
             if h in hourly_counts["Hour"].values else 0 for h in range(24)
         ]
     }).set_index("Hour")
