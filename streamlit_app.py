@@ -14,7 +14,7 @@ st.set_page_config(page_title="Illegal Parking Monitoring", page_icon="🚬", la
 
 # Title and description
 st.title("Illegal Parking Monitoring")
-st.subheader("📘 Capstone Project Group 24")
+st.subheader("📘 Capstone Project Group 26")
 st.write(
     """
     A real-time dashboard connecting to a Google Spreadsheet to monitor illegal parking activity. 
@@ -106,13 +106,13 @@ if not df.empty:
     avg_detections_per_hour = total_detections / 24 if total_detections > 0 else 0
 
     # Display Metrics and Pie Chart
-    st.subheader("📊 Historical Metrics and Analysis")
+    st.subheader("📊 Historical Data Insights")
     col1, col2 = st.columns(2)
 
     with col1:
         st.markdown(
             f"""
-            **Historical Metrics**
+            **Historical Data Insights**
             - Total Captured Images: {total_images}
             - Total Detections: {total_detections}
             - Detection Rate: {detection_rate:.2f}%
@@ -128,13 +128,13 @@ if not df.empty:
         ax1.axis('equal')
         st.pyplot(fig1)
 
-    # Cumulative Detection Rate Graph
-    st.subheader("📈 Cumulative Detection Rate Over Time")
+    # Cumulative Cumulative Violation Rate Graph
+    st.subheader("📈 Cumulative Violation Rate")
     fig2, ax2 = plt.subplots(figsize=(10, 5))
     df["Time"] = pd.to_datetime(df["Time"], format="%H:%M:%S", errors="coerce")
     detection_cumsum = df["Detection"].cumsum() / (df.index + 1) * 100
     ax2.plot(df["Time"], detection_cumsum, label="Cumulative Detection Rate", color="blue")
-    ax2.set_title("Cumulative Detection Rate Over Time")
+    ax2.set_title("Cumulative Violation Rate")
     ax2.set_xlabel("Time")
     ax2.set_ylabel("Detection Rate (%)")
     ax2.legend()
@@ -142,7 +142,7 @@ if not df.empty:
     st.pyplot(fig2)
 
     # Heatmap Section
-    st.subheader("🔥 Heatmap: Waktu vs Jumlah Pelanggaran")
+    st.subheader("🔥 Heatmap: Time vs Key Count")
     df["Hour"] = df["Time"].dt.hour
     hourly_counts = df.groupby("Hour")["Detection"].sum().reset_index()
     heatmap_data = pd.DataFrame({
@@ -155,9 +155,9 @@ if not df.empty:
 
     fig3, ax3 = plt.subplots(figsize=(10, 5))
     sns.heatmap(heatmap_data.T, annot=True, fmt=".0f", cmap="YlGnBu", cbar_kws={"label": "Detections"}, ax=ax3)
-    ax3.set_title("Heatmap: Waktu vs Jumlah Pelanggaran")
-    ax3.set_xlabel("Jam (24-Hour Format)")
-    ax3.set_ylabel("Detections")
+    ax3.set_title("Heatmap: Time vs Key Count")
+    ax3.set_xlabel("Hours (24-Hour Format)")
+    ax3.set_ylabel("Key Count")
     st.pyplot(fig3)
 
     # Display Historical Data Table
