@@ -4,9 +4,11 @@ from datetime import datetime, timedelta
 import time
 from streamlit_gsheets import GSheetsConnection
 import matplotlib.pyplot as plt
+import base64
 import seaborn as sns
 from PIL import Image
 import requests
+import io
 from io import BytesIO
 
 # Set up the Streamlit page configuration
@@ -44,7 +46,7 @@ def convert_gdrive_link(url):
 @st.cache_data(ttl=5)
 def load_data():
     # Create a connection to Google Sheets
-    url = "https://docs.google.com/spreadsheets/d/1icVXJlg0MfkAwGMFN5mdiaDHP9IXvAUWXlJtluLJ4_o/edit?usp=sharing"
+    url = "https://docs.google.com/spreadsheets/d/1bcept49fnUiGc3s5ou_68MLuwhhzhNUNvNMANesQ1Zk/edit?usp=sharing"
     conn = st.connection("gsheets", type=GSheetsConnection)
     df = conn.read(spreadsheet=url, header=0)
 
@@ -89,15 +91,15 @@ if not df.empty:
         """
     )
 
-    # Display the image if URL is available
-    if pd.notna(last_image_url):
-        st.subheader("🖼️ Latest Detection Image")
+    # Display the detected image
+    if last_image_url:
         try:
-            response = requests.get(last_image_url)
-            image = Image.open(BytesIO(response.content))
+            image_data = base64.b64decode(last_image_url)
+            image = Image.open(io.BytesIO(image_data))
             st.image(image, caption="Latest Detection Image", use_container_width=True)
+
         except Exception as e:
-            st.error(f"Error loading image: {e}")
+            st.error(f"Failed to decode or display image: {e}")
 
     # Metrics
     total_images = len(df)
@@ -173,6 +175,6 @@ while True:
     current_time = get_current_time()
     clock_placeholder.subheader(f"{current_time}")
     time.sleep(1)
-    if time.time() - start_time >= 10:
+    if time.time() - start_time >= 5:
         st.cache_data.clear()
         st.rerun()
